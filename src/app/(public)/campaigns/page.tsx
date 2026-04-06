@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,8 +27,6 @@ export default function CampaignsPage() {
   const [type, setType] = useState("all");
   const [channel, setChannel] = useState("all");
   const [page, setPage] = useState(1);
-  const searchParams = useSearchParams();
-  const router = useRouter();
 
   const fetchCampaigns = async () => {
     setLoading(true);
