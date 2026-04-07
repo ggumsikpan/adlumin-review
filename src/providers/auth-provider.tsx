@@ -38,35 +38,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isDemo, setIsDemo] = useState<false | "advertiser" | "influencer">(false);
-  const supabase = createClient();
 
   useEffect(() => {
+    // Check demo mode first
     const demoRole = isDemoMode();
     if (demoRole) {
-      setIsDemo(demoRole);
-      // Create a minimal fake User object for demo mode
       const demoProfile = demoRole === "advertiser" ? DEMO_ADVERTISER : DEMO_INFLUENCER;
+      setIsDemo(demoRole);
       setUser({ id: demoProfile.id, email: demoProfile.email } as User);
       setProfile(demoProfile);
       setLoading(false);
+      // Don't set up Supabase auth listeners in demo mode
       return;
     }
 
+    // Normal auth flow
+    const supabase = createClient();
+
     const getUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setUser(user);
+      try {
+        const {
+          data: { user: authUser },
+        } = await supabase.auth.getUser();
+        setUser(authUser);
 
-      if (user) {
-        const { data } = await supabase
-          .from("review_profiles")
-          .select("*")
-          .eq("id", user.id)
-          .single();
-        setProfile(data);
+        if (authUser) {
+          const { data } = await supabase
+            .from("review_profiles")
+            .select("*")
+            .eq("id", authUser.id)
+            .single();
+          setProfile(data);
+        }
+      } catch {
+        // Auth error - ignore
       }
-
       setLoading(false);
     };
 
@@ -92,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, [supabase]);
+  }, []);
 
   const signOut = async () => {
     if (isDemo) {
@@ -102,6 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfile(null);
       return;
     }
+    const supabase = createClient();
     await supabase.auth.signOut();
     setUser(null);
     setProfile(null);
