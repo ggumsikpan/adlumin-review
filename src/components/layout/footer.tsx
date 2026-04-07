@@ -73,7 +73,7 @@ export function Footer() {
           </div>
         </div>
         <div className="mt-8 pt-6 border-t text-center text-xs text-muted-foreground relative">
-          &copy; {new Date().getFullYear()} ADLUMIN &middot; All rights
+          &copy; {new Date().getFullYear()}{" "}ADLUMIN &middot; All rights
           reserved. |{" "}
           <span className="relative inline-block">
             <button
