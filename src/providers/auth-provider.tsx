@@ -33,24 +33,32 @@ const AuthContext = createContext<AuthContextType>({
   signOut: async () => {},
 });
 
+// Read demo mode synchronously at init time so first render already has the right value
+function getInitialDemoState() {
+  if (typeof document === "undefined") return { isDemo: false as const, profile: null, user: null };
+  const match = document.cookie.match(/(?:^|; )adlumin_demo=([^;]*)/);
+  if (!match) return { isDemo: false as const, profile: null, user: null };
+  const role = match[1] as "advertiser" | "influencer";
+  if (role !== "advertiser" && role !== "influencer") return { isDemo: false as const, profile: null, user: null };
+  const demoProfile = role === "advertiser" ? DEMO_ADVERTISER : DEMO_INFLUENCER;
+  return {
+    isDemo: role,
+    profile: demoProfile,
+    user: { id: demoProfile.id, email: demoProfile.email } as User,
+  };
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [isDemo, setIsDemo] = useState<false | "advertiser" | "influencer">(false);
+  const initial = getInitialDemoState();
+
+  const [user, setUser] = useState<User | null>(initial.user);
+  const [profile, setProfile] = useState<Profile | null>(initial.profile);
+  const [loading, setLoading] = useState(!initial.isDemo); // demo = not loading
+  const [isDemo, setIsDemo] = useState<false | "advertiser" | "influencer">(initial.isDemo);
 
   useEffect(() => {
-    // Check demo mode first
-    const demoRole = isDemoMode();
-    if (demoRole) {
-      const demoProfile = demoRole === "advertiser" ? DEMO_ADVERTISER : DEMO_INFLUENCER;
-      setIsDemo(demoRole);
-      setUser({ id: demoProfile.id, email: demoProfile.email } as User);
-      setProfile(demoProfile);
-      setLoading(false);
-      // Don't set up Supabase auth listeners in demo mode
-      return;
-    }
+    // Demo mode — already initialized synchronously, nothing to do
+    if (isDemo) return;
 
     // Normal auth flow
     const supabase = createClient();
@@ -98,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [isDemo]);
 
   const signOut = async () => {
     if (isDemo) {
