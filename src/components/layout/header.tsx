@@ -14,12 +14,13 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useRouter } from "next/navigation";
 
 export function Header() {
-  const { user, profile, loading, signOut } = useAuth();
+  const { user, profile, loading, signOut, isDemo } = useAuth();
   const router = useRouter();
 
   const handleSignOut = async () => {
     await signOut();
     router.push("/");
+    router.refresh();
   };
 
   const dashboardPath =
@@ -32,6 +33,12 @@ export function Header() {
           : "/";
 
   return (
+    <>
+      {isDemo && (
+        <div className="bg-amber-400 text-amber-900 text-center text-sm py-1.5 font-medium">
+          샘플 모드 &mdash; 실제 데이터가 아닙니다
+        </div>
+      )}
     <header className="border-b bg-white sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
@@ -99,5 +106,6 @@ export function Header() {
         </div>
       </div>
     </header>
+    </>
   );
 }

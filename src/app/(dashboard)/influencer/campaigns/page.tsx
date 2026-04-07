@@ -16,8 +16,11 @@ import {
   CAMPAIGN_TYPE_LABELS,
   CHANNEL_LABELS,
 } from "@/lib/utils/constants";
+import { useAuth } from "@/providers/auth-provider";
+import { DEMO_CAMPAIGNS } from "@/lib/demo-data";
 
 export default function InfluencerCampaignsPage() {
+  const { isDemo } = useAuth();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -27,6 +30,17 @@ export default function InfluencerCampaignsPage() {
   const [total, setTotal] = useState(0);
 
   const fetchCampaigns = async () => {
+    if (isDemo) {
+      let filtered = DEMO_CAMPAIGNS.filter((c) => c.status === "active");
+      if (type !== "all") filtered = filtered.filter((c) => c.campaign_type === type);
+      if (channel !== "all") filtered = filtered.filter((c) => c.required_channel === channel);
+      if (search) filtered = filtered.filter((c) => c.title.includes(search) || c.description.includes(search));
+      setCampaigns(filtered);
+      setTotal(filtered.length);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     const params = new URLSearchParams({ page: page.toString(), limit: "12" });
     if (type !== "all") params.set("type", type);
@@ -42,7 +56,7 @@ export default function InfluencerCampaignsPage() {
 
   useEffect(() => {
     fetchCampaigns();
-  }, [page, type, channel]);
+  }, [page, type, channel, isDemo]);
 
   return (
     <div className="space-y-6">

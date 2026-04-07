@@ -14,22 +14,35 @@ import {
 } from "@/lib/utils/constants";
 import { formatDate } from "@/lib/utils/format";
 import { toast } from "sonner";
+import { useAuth } from "@/providers/auth-provider";
+import { DEMO_APPLICATIONS } from "@/lib/demo-data";
 
 export default function InfluencerApplicationsPage() {
+  const { isDemo } = useAuth();
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
 
   useEffect(() => {
+    if (isDemo) {
+      setApplications(DEMO_APPLICATIONS);
+      setLoading(false);
+      return;
+    }
+
     fetch("/api/applications")
       .then((r) => r.json())
       .then((data) => {
         setApplications(Array.isArray(data) ? data : []);
         setLoading(false);
       });
-  }, []);
+  }, [isDemo]);
 
   const cancelApplication = async (id: string) => {
+    if (isDemo) {
+      toast.info("샘플 모드에서는 사용할 수 없습니다");
+      return;
+    }
     const res = await fetch(`/api/applications/${id}`, { method: "DELETE" });
     if (res.ok) {
       setApplications((prev) =>

@@ -12,13 +12,20 @@ import {
   TIER_LABELS,
 } from "@/lib/utils/constants";
 import { formatDate } from "@/lib/utils/format";
+import { DEMO_APPLICATIONS } from "@/lib/demo-data";
 
 export default function InfluencerDashboard() {
-  const { profile } = useAuth();
+  const { profile, isDemo } = useAuth();
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (isDemo) {
+      setApplications(DEMO_APPLICATIONS);
+      setLoading(false);
+      return;
+    }
+
     fetch("/api/applications")
       .then((r) => r.json())
       .then((data) => {
@@ -26,7 +33,7 @@ export default function InfluencerDashboard() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
+  }, [isDemo]);
 
   const activeApps = applications.filter(
     (a) => a.status === "pending" || a.status === "selected"

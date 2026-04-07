@@ -15,16 +15,38 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 
 function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [demoLoading, setDemoLoading] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/";
   const supabase = createClient();
+
+  const handleDemoLogin = async (role: "advertiser" | "influencer") => {
+    setDemoLoading(role);
+    try {
+      const res = await fetch("/api/demo-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role }),
+      });
+      if (res.ok) {
+        router.push(role === "advertiser" ? "/advertiser" : "/influencer");
+        router.refresh();
+      } else {
+        toast.error("샘플 로그인에 실패했습니다.");
+      }
+    } catch {
+      toast.error("샘플 로그인에 실패했습니다.");
+    }
+    setDemoLoading(null);
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,6 +132,39 @@ function LoginForm() {
           </p>
         </CardFooter>
       </form>
+
+      {/* Demo Mode Section */}
+      <div className="px-6 pb-6">
+        <div className="relative my-2">
+          <Separator />
+          <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-3 text-xs text-muted-foreground">
+            또는
+          </span>
+        </div>
+        <div className="mt-4 rounded-lg bg-amber-50 border border-amber-200 p-4 space-y-3">
+          <p className="text-sm font-medium text-amber-800 text-center">
+            회원가입 없이 플랫폼을 체험해보세요
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              className="flex-1 border-amber-300 text-amber-800 hover:bg-amber-100"
+              disabled={demoLoading !== null}
+              onClick={() => handleDemoLogin("advertiser")}
+            >
+              {demoLoading === "advertiser" ? "접속 중..." : "광고주 체험하기"}
+            </Button>
+            <Button
+              variant="outline"
+              className="flex-1 border-amber-300 text-amber-800 hover:bg-amber-100"
+              disabled={demoLoading !== null}
+              onClick={() => handleDemoLogin("influencer")}
+            >
+              {demoLoading === "influencer" ? "접속 중..." : "인플루언서 체험하기"}
+            </Button>
+          </div>
+        </div>
+      </div>
     </Card>
   );
 }

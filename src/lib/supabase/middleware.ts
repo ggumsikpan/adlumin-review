@@ -2,6 +2,44 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function updateSession(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+
+  // --- Demo mode handling ---
+  const demoCookie = request.cookies.get("adlumin_demo")?.value;
+  if (demoCookie === "advertiser" || demoCookie === "influencer") {
+    const protectedPaths = ["/influencer", "/advertiser", "/admin"];
+    const isProtected = protectedPaths.some((p) => pathname.startsWith(p));
+
+    // Demo user on auth pages → redirect to their dashboard
+    if (pathname === "/login" || pathname.startsWith("/register")) {
+      const url = request.nextUrl.clone();
+      url.pathname = demoCookie === "advertiser" ? "/advertiser" : "/influencer";
+      return NextResponse.redirect(url);
+    }
+
+    // Demo user accessing protected routes
+    if (isProtected) {
+      // Wrong role → redirect to correct dashboard
+      if (pathname.startsWith("/admin")) {
+        const url = request.nextUrl.clone();
+        url.pathname = demoCookie === "advertiser" ? "/advertiser" : "/influencer";
+        return NextResponse.redirect(url);
+      }
+      if (pathname.startsWith("/influencer") && demoCookie !== "influencer") {
+        return NextResponse.redirect(new URL("/advertiser", request.url));
+      }
+      if (pathname.startsWith("/advertiser") && demoCookie !== "advertiser") {
+        return NextResponse.redirect(new URL("/influencer", request.url));
+      }
+      // Correct role → allow through
+      return NextResponse.next({ request });
+    }
+
+    // Public pages are fine for demo users
+    return NextResponse.next({ request });
+  }
+
+  // --- Normal auth flow ---
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -28,8 +66,6 @@ export async function updateSession(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  const pathname = request.nextUrl.pathname;
 
   // Protected routes
   const protectedPaths = ["/influencer", "/advertiser", "/admin"];

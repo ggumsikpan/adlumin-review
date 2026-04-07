@@ -13,13 +13,25 @@ import {
   CHANNEL_LABELS,
 } from "@/lib/utils/constants";
 import { formatDate } from "@/lib/utils/format";
+import { useAuth } from "@/providers/auth-provider";
+import { DEMO_CAMPAIGNS } from "@/lib/demo-data";
+import { toast } from "sonner";
 
 export default function AdvertiserCampaignsPage() {
+  const { isDemo } = useAuth();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("all");
 
   const fetchCampaigns = async (status?: string) => {
+    if (isDemo) {
+      const filtered = status && status !== "all"
+        ? DEMO_CAMPAIGNS.filter((c) => c.status === status)
+        : DEMO_CAMPAIGNS;
+      setCampaigns(filtered);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     const params = new URLSearchParams({ limit: "50" });
     if (status && status !== "all") params.set("status", status);
@@ -32,13 +44,16 @@ export default function AdvertiserCampaignsPage() {
 
   useEffect(() => {
     fetchCampaigns(tab === "all" ? undefined : tab);
-  }, [tab]);
+  }, [tab, isDemo]);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">캠페인 관리</h1>
-        <Button render={<Link href="/advertiser/campaigns/new" />}>
+        <Button
+          render={isDemo ? undefined : <Link href="/advertiser/campaigns/new" />}
+          onClick={isDemo ? () => toast.info("샘플 모드에서는 사용할 수 없습니다") : undefined}
+        >
           새 캠페인
         </Button>
       </div>

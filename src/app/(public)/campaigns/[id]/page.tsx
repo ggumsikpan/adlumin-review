@@ -25,10 +25,11 @@ import {
 } from "@/lib/utils/constants";
 import { formatDate } from "@/lib/utils/format";
 import { toast } from "sonner";
+import { DEMO_CAMPAIGNS } from "@/lib/demo-data";
 
 export default function CampaignDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { user, profile } = useAuth();
+  const { user, profile, isDemo } = useAuth();
   const router = useRouter();
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [loading, setLoading] = useState(true);
@@ -37,6 +38,13 @@ export default function CampaignDetailPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
+    if (id?.startsWith("demo-")) {
+      const demoCampaign = DEMO_CAMPAIGNS.find((c) => c.id === id) || null;
+      setCampaign(demoCampaign);
+      setLoading(false);
+      return;
+    }
+
     fetch(`/api/campaigns/${id}`)
       .then((res) => res.json())
       .then((data) => {
@@ -47,6 +55,12 @@ export default function CampaignDetailPage() {
   }, [id]);
 
   const handleApply = async () => {
+    if (isDemo) {
+      toast.info("샘플 모드에서는 사용할 수 없습니다");
+      setDialogOpen(false);
+      return;
+    }
+
     if (!user) {
       router.push(`/login?redirect=/campaigns/${id}`);
       return;

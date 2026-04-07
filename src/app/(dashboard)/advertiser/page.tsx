@@ -8,13 +8,23 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/providers/auth-provider";
 import type { Campaign } from "@/lib/types/database";
 import { CAMPAIGN_STATUS_LABELS } from "@/lib/utils/constants";
+import { DEMO_CAMPAIGNS } from "@/lib/demo-data";
+import { toast } from "sonner";
 
 export default function AdvertiserDashboard() {
-  const { profile } = useAuth();
+  const { profile, isDemo } = useAuth();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [stats, setStats] = useState({ total: 0, active: 0, completed: 0 });
 
   useEffect(() => {
+    if (isDemo) {
+      setCampaigns(DEMO_CAMPAIGNS.slice(0, 5));
+      const active = DEMO_CAMPAIGNS.filter((c) => c.status === "active").length;
+      const completed = DEMO_CAMPAIGNS.filter((c) => c.status === "completed").length;
+      setStats({ total: DEMO_CAMPAIGNS.length, active, completed });
+      return;
+    }
+
     // Fetch advertiser's campaigns via API
     fetch("/api/campaigns?status=draft&limit=100")
       .then((r) => r.json())
@@ -35,7 +45,7 @@ export default function AdvertiserDashboard() {
         completed: 0,
       });
     });
-  }, []);
+  }, [isDemo]);
 
   return (
     <div className="space-y-6">
@@ -46,7 +56,10 @@ export default function AdvertiserDashboard() {
             안녕하세요, {profile?.display_name}님
           </p>
         </div>
-        <Button render={<Link href="/advertiser/campaigns/new" />}>
+        <Button
+          render={isDemo ? undefined : <Link href="/advertiser/campaigns/new" />}
+          onClick={isDemo ? () => toast.info("샘플 모드에서는 사용할 수 없습니다") : undefined}
+        >
           새 캠페인 만들기
         </Button>
       </div>
@@ -87,7 +100,11 @@ export default function AdvertiserDashboard() {
           {campaigns.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <p>아직 캠페인이 없습니다.</p>
-              <Button className="mt-4" render={<Link href="/advertiser/campaigns/new" />}>
+              <Button
+                className="mt-4"
+                render={isDemo ? undefined : <Link href="/advertiser/campaigns/new" />}
+                onClick={isDemo ? () => toast.info("샘플 모드에서는 사용할 수 없습니다") : undefined}
+              >
                 첫 캠페인 만들기
               </Button>
             </div>

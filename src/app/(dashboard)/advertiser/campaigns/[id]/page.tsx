@@ -17,15 +17,27 @@ import {
 } from "@/lib/utils/constants";
 import { formatDate, formatCurrency } from "@/lib/utils/format";
 import { toast } from "sonner";
+import { useAuth } from "@/providers/auth-provider";
+import { DEMO_CAMPAIGNS, DEMO_APPLICANTS } from "@/lib/demo-data";
 
 export default function AdvertiserCampaignDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { isDemo } = useAuth();
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (isDemo && id?.startsWith("demo-")) {
+      const demoCampaign = DEMO_CAMPAIGNS.find((c) => c.id === id) || null;
+      setCampaign(demoCampaign);
+      // Show demo applicants for the first campaign, empty for others
+      setApplications(id === "demo-camp-001" ? DEMO_APPLICANTS : []);
+      setLoading(false);
+      return;
+    }
+
     Promise.all([
       fetch(`/api/campaigns/${id}`).then((r) => r.json()),
       fetch(`/api/applications?campaign_id=${id}`).then((r) => r.json()),
@@ -34,9 +46,13 @@ export default function AdvertiserCampaignDetailPage() {
       setApplications(Array.isArray(appData) ? appData : []);
       setLoading(false);
     });
-  }, [id]);
+  }, [id, isDemo]);
 
   const updateCampaignStatus = async (status: string) => {
+    if (isDemo) {
+      toast.info("샘플 모드에서는 사용할 수 없습니다");
+      return;
+    }
     const res = await fetch(`/api/campaigns/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -53,6 +69,10 @@ export default function AdvertiserCampaignDetailPage() {
     appId: string,
     status: string
   ) => {
+    if (isDemo) {
+      toast.info("샘플 모드에서는 사용할 수 없습니다");
+      return;
+    }
     const res = await fetch(`/api/applications/${appId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
