@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,77 +16,161 @@ import {
 } from "@/components/ui/select";
 import {
   CAMPAIGN_TYPE_LABELS,
-  CHANNEL_LABELS,
-  COMPENSATION_LABELS,
+  SELLER_CHANNEL_OPTIONS,
+  PLACE_CHANNEL_OPTIONS,
+  SELLER_CATEGORIES,
+  PLACE_CATEGORIES,
+  REGIONS,
 } from "@/lib/utils/constants";
-import type { Category } from "@/lib/types/database";
 import { toast } from "sonner";
 
 export default function NewCampaignPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [categories, setCategories] = useState<Category[]>([]);
 
-  useEffect(() => {
-    // Fetch categories
-    fetch("/api/campaigns?limit=0")
-      .then(() => {
-        // Categories could be fetched separately; for now hardcode
-      })
-      .catch(() => {});
-  }, []);
+  // Form state
+  const [campaignType, setCampaignType] = useState<"seller" | "place" | "">("");
+  const [channel, setChannel] = useState("");
+  const [categoryName, setCategoryName] = useState("");
+  const [region, setRegion] = useState("");
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
+  const [detailPreviews, setDetailPreviews] = useState<string[]>([]);
+
+  // Date state for weekday validation
+  const [announceDate, setAnnounceDate] = useState("");
+  const [deadlineDate, setDeadlineDate] = useState("");
+
+  const channelOptions =
+    campaignType === "seller"
+      ? SELLER_CHANNEL_OPTIONS
+      : campaignType === "place"
+        ? PLACE_CHANNEL_OPTIONS
+        : [];
+
+  const categoryOptions =
+    campaignType === "seller"
+      ? SELLER_CATEGORIES
+      : campaignType === "place"
+        ? PLACE_CATEGORIES
+        : [];
+
+  const handleTypeSelect = (type: "seller" | "place") => {
+    setCampaignType(type);
+    setChannel("");
+    setCategoryName("");
+    setRegion("");
+  };
+
+  const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setThumbnailPreview(url);
+    } else {
+      setThumbnailPreview(null);
+    }
+  };
+
+  const handleDetailImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      const urls = Array.from(files).map((f) => URL.createObjectURL(f));
+      setDetailPreviews(urls);
+    } else {
+      setDetailPreviews([]);
+    }
+  };
+
+  const handleWeekdayDate = (
+    value: string,
+    setter: (v: string) => void
+  ) => {
+    if (!value) {
+      setter("");
+      return;
+    }
+    const date = new Date(value);
+    const day = date.getDay();
+    if (day === 0 || day === 6) {
+      alert("토요일/일요일은 선택할 수 없습니다. 평일을 선택해주세요.");
+      setter("");
+      return;
+    }
+    setter(value);
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!campaignType) {
+      toast.error("캠페인 유형을 선택해주세요.");
+      return;
+    }
+    if (!channel) {
+      toast.error("광고 채널을 선택해주세요.");
+      return;
+    }
+    if (!categoryName) {
+      toast.error("카테고리를 선택해주세요.");
+      return;
+    }
+
     setLoading(true);
 
     const form = new FormData(e.currentTarget);
 
     const body = {
       title: form.get("title"),
-      description: form.get("description"),
-      campaign_type: form.get("campaign_type"),
-      required_channel: form.get("required_channel"),
-      compensation_type: form.get("compensation_type"),
-      compensation_value: form.get("compensation_value") || null,
-      cash_amount: parseInt((form.get("cash_amount") as string) || "0"),
-      product_name: form.get("product_name") || null,
-      product_value: parseInt((form.get("product_value") as string) || "0") || null,
-      store_name: form.get("store_name") || null,
-      store_address: form.get("store_address") || null,
-      max_applicants: parseInt((form.get("max_applicants") as string) || "10"),
-      recruitment_start: form.get("recruitment_start"),
-      recruitment_end: form.get("recruitment_end"),
-      selection_date: form.get("selection_date") || null,
-      content_deadline: form.get("content_deadline"),
-      publish_deadline: form.get("publish_deadline"),
-      guidelines: form.get("guidelines") || null,
-      required_keywords: (form.get("required_keywords") as string)
-        ?.split(",")
-        .map((k) => k.trim())
-        .filter(Boolean) || [],
-      required_images_count: parseInt(
-        (form.get("required_images_count") as string) || "1"
+      description: "",
+      campaign_type: campaignType,
+      required_channel: channel,
+      category_name: categoryName,
+      region: campaignType === "place" ? region || null : null,
+      purchase_link: form.get("purchase_link") || null,
+      purchase_price:
+        parseInt((form.get("purchase_price") as string) || "0") || null,
+      max_applicants: parseInt(
+        (form.get("max_applicants") as string) || "10"
       ),
-      min_text_length: parseInt(
-        (form.get("min_text_length") as string) || "500"
-      ),
+      provided_items: form.get("provided_items") || null,
+      search_keywords_text: form.get("search_keywords_text") || null,
+      mission: form.get("mission") || null,
+      required_qa: form.get("required_qa") || null,
+      // Dates
+      apply_start: form.get("apply_start"),
+      apply_end: form.get("apply_end"),
+      announce_date: announceDate || null,
+      register_start: form.get("register_start") || null,
+      register_end: form.get("register_end") || null,
+      deadline_date: deadlineDate || null,
+      // Legacy compatibility
+      recruitment_start: form.get("apply_start"),
+      recruitment_end: form.get("apply_end"),
+      selection_date: announceDate || null,
+      content_deadline:
+        form.get("register_end") || form.get("apply_end"),
+      publish_deadline: deadlineDate || form.get("apply_end"),
+      compensation_type: "product",
+      cash_amount: 0,
       status: "draft",
     };
 
-    const res = await fetch("/api/campaigns", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+    try {
+      const res = await fetch("/api/campaigns", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
 
-    if (res.ok) {
-      const data = await res.json();
-      toast.success("캠페인이 생성되었습니다!");
-      router.push(`/advertiser/campaigns/${data.id}`);
-    } else {
-      const err = await res.json();
-      toast.error(err.error || "캠페인 생성에 실패했습니다.");
+      if (res.ok) {
+        const data = await res.json();
+        toast.success("캠페인이 생성되었습니다!");
+        router.push(`/advertiser/campaigns/${data.id}`);
+      } else {
+        const err = await res.json();
+        toast.error(err.error || "캠페인 생성에 실패했습니다.");
+      }
+    } catch {
+      toast.error("캠페인 생성에 실패했습니다.");
     }
     setLoading(false);
   };
@@ -96,10 +180,10 @@ export default function NewCampaignPage() {
       <h1 className="text-2xl font-bold">새 캠페인 만들기</h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Basic Info */}
+        {/* 캠페인 제목 */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">기본 정보</CardTitle>
+            <CardTitle className="text-lg">캠페인 제목</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -111,50 +195,287 @@ export default function NewCampaignPage() {
                 required
               />
             </div>
+          </CardContent>
+        </Card>
+
+        {/* 썸네일 */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">썸네일 이미지</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="description">캠페인 설명 *</Label>
-              <Textarea
-                id="description"
-                name="description"
-                placeholder="캠페인에 대해 자세히 설명해주세요"
-                rows={5}
-                required
+              <Label htmlFor="thumbnail">썸네일 업로드</Label>
+              <Input
+                id="thumbnail"
+                name="thumbnail"
+                type="file"
+                accept="image/*"
+                onChange={handleThumbnailChange}
+              />
+              {thumbnailPreview && (
+                <div className="mt-2">
+                  <img
+                    src={thumbnailPreview}
+                    alt="썸네일 미리보기"
+                    className="w-48 h-32 object-cover rounded-lg border"
+                  />
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 구매처 링크 */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">구매처 링크</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="purchase_link">구매처 링크 (URL)</Label>
+              <Input
+                id="purchase_link"
+                name="purchase_link"
+                type="url"
+                placeholder="https://..."
               />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="space-y-2">
-                <Label>캠페인 유형 *</Label>
-                <Select name="campaign_type" required>
-                  <SelectTrigger>
-                    <SelectValue placeholder="선택" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(CAMPAIGN_TYPE_LABELS).map(([k, v]) => (
-                      <SelectItem key={k} value={k}>
-                        {v}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+          </CardContent>
+        </Card>
+
+        {/* 캠페인 유형 */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">캠페인 유형 *</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                type="button"
+                onClick={() => handleTypeSelect("seller")}
+                className={`p-6 rounded-xl border-2 text-center transition-all ${
+                  campaignType === "seller"
+                    ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                    : "border-muted hover:border-primary/40"
+                }`}
+              >
+                <div className="text-4xl mb-2">📦</div>
+                <div className="font-semibold text-lg">제품형(셀러)</div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  제품을 배송받아 리뷰
+                </p>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleTypeSelect("place")}
+                className={`p-6 rounded-xl border-2 text-center transition-all ${
+                  campaignType === "place"
+                    ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                    : "border-muted hover:border-primary/40"
+                }`}
+              >
+                <div className="text-4xl mb-2">📍</div>
+                <div className="font-semibold text-lg">방문형(플레이스)</div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  매장을 방문하여 리뷰
+                </p>
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 광고채널 */}
+        {campaignType && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">광고 채널 *</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                {channelOptions.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setChannel(opt.value)}
+                    className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
+                      channel === opt.value
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-muted hover:border-primary/40"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
               </div>
-              <div className="space-y-2">
-                <Label>필수 채널 *</Label>
-                <Select name="required_channel" required>
-                  <SelectTrigger>
-                    <SelectValue placeholder="선택" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(CHANNEL_LABELS).map(([k, v]) => (
-                      <SelectItem key={k} value={k}>
-                        {v}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* 카테고리 */}
+        {campaignType && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">카테고리 *</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                {categoryOptions.map((cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setCategoryName(cat)}
+                    className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
+                      categoryName === cat
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-muted hover:border-primary/40"
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
               </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* 지역 (방문형만) */}
+        {campaignType === "place" && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">지역</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Select value={region} onValueChange={(v) => { if (v) setRegion(v); }}>
+                <SelectTrigger className="w-full sm:w-64">
+                  <SelectValue placeholder="지역을 선택하세요" />
+                </SelectTrigger>
+                <SelectContent>
+                  {REGIONS.map((r) => (
+                    <SelectItem key={r} value={r}>
+                      {r}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* 일정 */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">일정 설정</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* 모집기간 */}
+            <div className="space-y-2">
+              <Label className="font-semibold">모집기간 *</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">시작일</Label>
+                  <Input name="apply_start" type="date" required />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">마감일</Label>
+                  <Input name="apply_end" type="date" required />
+                </div>
+              </div>
+            </div>
+
+            {/* 발표일 */}
+            <div className="space-y-2">
+              <Label className="font-semibold">발표일 (평일만 선택 가능)</Label>
+              <Input
+                type="date"
+                value={announceDate}
+                onChange={(e) =>
+                  handleWeekdayDate(e.target.value, setAnnounceDate)
+                }
+              />
+            </div>
+
+            {/* 등록기간 */}
+            <div className="space-y-2">
+              <Label className="font-semibold">등록기간</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">시작일</Label>
+                  <Input name="register_start" type="date" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">마감일</Label>
+                  <Input name="register_end" type="date" />
+                </div>
+              </div>
+            </div>
+
+            {/* 마감일 */}
+            <div className="space-y-2">
+              <Label className="font-semibold">마감일 (평일만 선택 가능)</Label>
+              <Input
+                type="date"
+                value={deadlineDate}
+                onChange={(e) =>
+                  handleWeekdayDate(e.target.value, setDeadlineDate)
+                }
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 상세 페이지 이미지 */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">상세 페이지 이미지</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="detail_images">이미지 업로드 (여러 장 가능)</Label>
+              <Input
+                id="detail_images"
+                name="detail_images"
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleDetailImagesChange}
+              />
+              {detailPreviews.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {detailPreviews.map((url, i) => (
+                    <img
+                      key={i}
+                      src={url}
+                      alt={`상세 이미지 ${i + 1}`}
+                      className="w-24 h-24 object-cover rounded-lg border"
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 제공내역, 모집인원, 구매가격 */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">캠페인 상세</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="provided_items">제공내역</Label>
+              <Textarea
+                id="provided_items"
+                name="provided_items"
+                placeholder="리뷰어에게 제공되는 내역을 입력하세요"
+                rows={3}
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>모집 인원 *</Label>
+                <Label htmlFor="max_applicants">모집인원 *</Label>
                 <Input
+                  id="max_applicants"
                   name="max_applicants"
                   type="number"
                   min="1"
@@ -162,197 +483,57 @@ export default function NewCampaignPage() {
                   required
                 />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="purchase_price">구매가격 (원, 선택)</Label>
+                <Input
+                  id="purchase_price"
+                  name="purchase_price"
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Compensation */}
+        {/* 검색키워드, 미션, 필수입력답변 */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">보상 정보</CardTitle>
+            <CardTitle className="text-lg">미션 및 키워드</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label>보상 유형 *</Label>
-                <Select name="compensation_type" required>
-                  <SelectTrigger>
-                    <SelectValue placeholder="선택" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(COMPENSATION_LABELS).map(([k, v]) => (
-                      <SelectItem key={k} value={k}>
-                        {v}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="cash_amount">현금 보상 (원)</Label>
-                <Input
-                  id="cash_amount"
-                  name="cash_amount"
-                  type="number"
-                  min="0"
-                  defaultValue="0"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="product_name">제공 제품명</Label>
-                <Input
-                  id="product_name"
-                  name="product_name"
-                  placeholder="제품/서비스명"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="product_value">제품 가치 (원)</Label>
-                <Input
-                  id="product_value"
-                  name="product_value"
-                  type="number"
-                  min="0"
-                />
-              </div>
-            </div>
             <div className="space-y-2">
-              <Label htmlFor="compensation_value">보상 상세 설명</Label>
-              <Input
-                id="compensation_value"
-                name="compensation_value"
-                placeholder="예: 5만원 상당 화장품 세트 + 현금 2만원"
+              <Label htmlFor="search_keywords_text">검색키워드</Label>
+              <Textarea
+                id="search_keywords_text"
+                name="search_keywords_text"
+                placeholder="검색 키워드를 입력하세요 (줄바꿈 또는 쉼표로 구분)"
+                rows={3}
               />
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Location (for visit type) */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">
-              매장 정보 (방문형 캠페인)
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="store_name">매장명</Label>
-                <Input
-                  id="store_name"
-                  name="store_name"
-                  placeholder="매장 이름"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="store_address">매장 주소</Label>
-                <Input
-                  id="store_address"
-                  name="store_address"
-                  placeholder="서울시 강남구..."
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Schedule */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">일정</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label>모집 시작일 *</Label>
-                <Input
-                  name="recruitment_start"
-                  type="datetime-local"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>모집 마감일 *</Label>
-                <Input
-                  name="recruitment_end"
-                  type="datetime-local"
-                  required
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="space-y-2">
-                <Label>선정 발표일</Label>
-                <Input name="selection_date" type="datetime-local" />
-              </div>
-              <div className="space-y-2">
-                <Label>콘텐츠 마감일 *</Label>
-                <Input
-                  name="content_deadline"
-                  type="datetime-local"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>게시 마감일 *</Label>
-                <Input
-                  name="publish_deadline"
-                  type="datetime-local"
-                  required
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Content Requirements */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">콘텐츠 요구사항</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="guidelines">상세 가이드라인</Label>
+              <Label htmlFor="mission">체험단 미션</Label>
               <Textarea
-                id="guidelines"
-                name="guidelines"
-                placeholder="인플루언서에게 전달할 콘텐츠 가이드라인을 작성해주세요"
+                id="mission"
+                name="mission"
+                placeholder="체험단 미션을 입력하세요"
                 rows={4}
               />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="required_keywords">필수 키워드</Label>
-                <Input
-                  id="required_keywords"
-                  name="required_keywords"
-                  placeholder="쉼표로 구분"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>필수 이미지 수</Label>
-                <Input
-                  name="required_images_count"
-                  type="number"
-                  min="0"
-                  defaultValue="1"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>최소 글자수</Label>
-                <Input
-                  name="min_text_length"
-                  type="number"
-                  min="0"
-                  defaultValue="500"
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="required_qa">필수입력답변</Label>
+              <Textarea
+                id="required_qa"
+                name="required_qa"
+                placeholder="리뷰어에게 요청할 필수 질문/답변 항목을 입력하세요"
+                rows={4}
+              />
             </div>
           </CardContent>
         </Card>
 
+        {/* Submit */}
         <div className="flex gap-3 justify-end">
           <Button
             type="button"

@@ -65,31 +65,40 @@ export default function AdvertiserCampaignsPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {campaigns.map((c) => (
-            <Link key={c.id} href={`/advertiser/campaigns/${c.id}`}>
-              <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium">{c.title}</p>
-                      <Badge variant="outline" className="text-xs">
-                        {CAMPAIGN_TYPE_LABELS[c.campaign_type]}
-                      </Badge>
-                      <Badge variant="secondary" className="text-xs">
-                        {CHANNEL_LABELS[c.required_channel]}
-                      </Badge>
+          {campaigns.map((c) => {
+            const endDate = c.apply_end || c.recruitment_end;
+            const startDate = c.apply_start || c.recruitment_start;
+            return (
+              <Link key={c.id} href={`/advertiser/campaigns/${c.id}`}>
+                <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                  <CardContent className="p-4 flex items-center justify-between">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium">{c.title}</p>
+                        <Badge variant="outline" className="text-xs">
+                          {CAMPAIGN_TYPE_LABELS[c.campaign_type] || c.campaign_type}
+                        </Badge>
+                        <Badge variant="secondary" className="text-xs">
+                          {CHANNEL_LABELS[c.required_channel] || c.required_channel}
+                        </Badge>
+                        {c.category_name && (
+                          <Badge variant="outline" className="text-xs">
+                            {c.category_name}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        모집 {c.current_applicants}/{c.max_applicants}명 |{" "}
+                        {formatDate(startDate)} ~{" "}
+                        {formatDate(endDate)}
+                      </p>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      모집 {c.current_applicants}/{c.max_applicants}명 |{" "}
-                      {formatDate(c.recruitment_start)} ~{" "}
-                      {formatDate(c.recruitment_end)}
-                    </p>
-                  </div>
-                  <Badge>{CAMPAIGN_STATUS_LABELS[c.status]}</Badge>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+                    <Badge>{CAMPAIGN_STATUS_LABELS[c.status] || c.status}</Badge>
+                  </CardContent>
+                </Card>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>

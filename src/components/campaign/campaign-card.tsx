@@ -7,9 +7,8 @@ import type { Campaign } from "@/lib/types/database";
 import {
   CAMPAIGN_TYPE_LABELS,
   CHANNEL_LABELS,
-  COMPENSATION_LABELS,
 } from "@/lib/utils/constants";
-import { formatDate, formatCurrency } from "@/lib/utils/format";
+import { formatDate } from "@/lib/utils/format";
 
 interface CampaignCardProps {
   campaign: Campaign;
@@ -17,10 +16,22 @@ interface CampaignCardProps {
 
 export function CampaignCard({ campaign }: CampaignCardProps) {
   const isRecruiting = campaign.status === "active";
+  const endDate = campaign.apply_end || campaign.recruitment_end;
   const daysLeft = Math.ceil(
-    (new Date(campaign.recruitment_end).getTime() - Date.now()) /
+    (new Date(endDate).getTime() - Date.now()) /
       (1000 * 60 * 60 * 24)
   );
+
+  const typeIcon =
+    campaign.campaign_type === "seller"
+      ? "📦"
+      : campaign.campaign_type === "place"
+        ? "📍"
+        : campaign.campaign_type === "visit"
+          ? "📍"
+          : campaign.campaign_type === "shipping"
+            ? "📦"
+            : "📰";
 
   return (
     <Link href={`/campaigns/${campaign.id}`}>
@@ -34,11 +45,7 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-muted-foreground text-4xl">
-              {campaign.campaign_type === "visit"
-                ? "📍"
-                : campaign.campaign_type === "shipping"
-                  ? "📦"
-                  : "📰"}
+              {typeIcon}
             </div>
           )}
           {isRecruiting && daysLeft > 0 && (
@@ -55,10 +62,10 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
         <CardContent className="p-4 space-y-2">
           <div className="flex items-center gap-2 flex-wrap">
             <Badge variant="outline">
-              {CAMPAIGN_TYPE_LABELS[campaign.campaign_type]}
+              {CAMPAIGN_TYPE_LABELS[campaign.campaign_type] || campaign.campaign_type}
             </Badge>
             <Badge variant="secondary">
-              {CHANNEL_LABELS[campaign.required_channel]}
+              {CHANNEL_LABELS[campaign.required_channel] || campaign.required_channel}
             </Badge>
           </div>
           <h3 className="font-semibold text-sm line-clamp-2 leading-snug">
@@ -69,19 +76,17 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
               {campaign.advertiser.company_name}
             </p>
           )}
-          <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
-            <span>{COMPENSATION_LABELS[campaign.compensation_type]}</span>
-            {campaign.cash_amount > 0 && (
-              <span className="font-medium text-foreground">
-                {formatCurrency(campaign.cash_amount)}
-              </span>
-            )}
-          </div>
+          {campaign.category_name && (
+            <p className="text-xs text-muted-foreground">
+              {campaign.category_name}
+              {campaign.region ? ` | ${campaign.region}` : ""}
+            </p>
+          )}
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>
               모집 {campaign.current_applicants}/{campaign.max_applicants}명
             </span>
-            <span>~{formatDate(campaign.recruitment_end)}</span>
+            <span>~{formatDate(endDate)}</span>
           </div>
         </CardContent>
       </Card>

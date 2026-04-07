@@ -67,7 +67,7 @@ export default function InfluencerCampaignsPage() {
           </Button>
         </form>
         <Select value={type} onValueChange={(v) => { if (v) { setType(v); setPage(1); } }}>
-          <SelectTrigger className="w-32">
+          <SelectTrigger className="w-40">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -78,7 +78,7 @@ export default function InfluencerCampaignsPage() {
           </SelectContent>
         </Select>
         <Select value={channel} onValueChange={(v) => { if (v) { setChannel(v); setPage(1); } }}>
-          <SelectTrigger className="w-36">
+          <SelectTrigger className="w-44">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

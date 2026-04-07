@@ -78,7 +78,7 @@ export default function CampaignsPage() {
         </form>
         <div className="flex gap-2">
           <Select value={type} onValueChange={(v) => { if (v) { setType(v); setPage(1); } }}>
-            <SelectTrigger className="w-32">
+            <SelectTrigger className="w-40">
               <SelectValue placeholder="캠페인 유형" />
             </SelectTrigger>
             <SelectContent>
@@ -91,7 +91,7 @@ export default function CampaignsPage() {
             </SelectContent>
           </Select>
           <Select value={channel} onValueChange={(v) => { if (v) { setChannel(v); setPage(1); } }}>
-            <SelectTrigger className="w-36">
+            <SelectTrigger className="w-44">
               <SelectValue placeholder="채널" />
             </SelectTrigger>
             <SelectContent>

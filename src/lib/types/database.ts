@@ -1,8 +1,8 @@
 export type UserRole = "admin" | "advertiser" | "influencer";
-export type CampaignType = "visit" | "shipping" | "reporter";
-export type ChannelType = "naver_blog" | "instagram" | "youtube" | "tiktok" | "youtube_shorts" | "instagram_reels";
+export type CampaignType = "visit" | "shipping" | "reporter" | "seller" | "place";
+export type ChannelType = "naver_blog" | "instagram" | "youtube" | "tiktok" | "youtube_shorts" | "instagram_reels" | "purchase_review" | "purchase_blog" | "purchase_insta" | "purchase_reels" | "purchase_clip" | "purchase_tiktok" | "purchase_shorts" | "search_purchase" | "blog" | "blog_reporter" | "naver_influencer" | "reels" | "clip" | "shorts";
 export type CompensationType = "product" | "cash" | "product_and_cash" | "points";
-export type CampaignStatus = "draft" | "pending_review" | "active" | "recruitment_closed" | "in_progress" | "completed" | "cancelled";
+export type CampaignStatus = "draft" | "pending_review" | "active" | "recruitment_closed" | "closed" | "in_progress" | "completed" | "cancelled";
 export type ApplicationStatus = "pending" | "selected" | "rejected" | "waitlisted" | "cancelled" | "no_show";
 export type ReviewStatus = "pending" | "in_review" | "revision_requested" | "approved" | "rejected";
 export type InfluencerTier = "standard" | "silver" | "gold" | "platinum" | "premier";
@@ -115,6 +115,22 @@ export interface Campaign {
   view_count: number;
   created_at: string;
   updated_at: string;
+  // New fields
+  purchase_link: string | null;
+  purchase_price: number | null;
+  category_name: string | null;
+  region: string | null;
+  detail_images: string[];
+  provided_items: string | null;
+  search_keywords_text: string | null;
+  mission: string | null;
+  required_qa: string | null;
+  apply_start: string;
+  apply_end: string;
+  announce_date: string | null;
+  register_start: string | null;
+  register_end: string | null;
+  deadline_date: string | null;
   // Joined fields
   category?: Category;
   advertiser?: AdvertiserProfile;

@@ -21,10 +21,9 @@ import type { Campaign } from "@/lib/types/database";
 import {
   CAMPAIGN_TYPE_LABELS,
   CHANNEL_LABELS,
-  COMPENSATION_LABELS,
   CAMPAIGN_STATUS_LABELS,
 } from "@/lib/utils/constants";
-import { formatDate, formatCurrency } from "@/lib/utils/format";
+import { formatDate } from "@/lib/utils/format";
 import { toast } from "sonner";
 
 export default function CampaignDetailPage() {
@@ -63,7 +62,6 @@ export default function CampaignDetailPage() {
     if (res.ok) {
       toast.success("신청이 완료되었습니다!");
       setDialogOpen(false);
-      // Refresh campaign data
       const updated = await fetch(`/api/campaigns/${id}`).then((r) => r.json());
       setCampaign(updated);
     } else {
@@ -95,6 +93,8 @@ export default function CampaignDetailPage() {
 
   const isRecruiting = campaign.status === "active";
   const canApply = profile?.role === "influencer" && isRecruiting;
+  const applyEnd = campaign.apply_end || campaign.recruitment_end;
+  const applyStart = campaign.apply_start || campaign.recruitment_start;
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -102,16 +102,22 @@ export default function CampaignDetailPage() {
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-3 flex-wrap">
           <Badge variant="outline">
-            {CAMPAIGN_TYPE_LABELS[campaign.campaign_type]}
+            {CAMPAIGN_TYPE_LABELS[campaign.campaign_type] || campaign.campaign_type}
           </Badge>
           <Badge variant="secondary">
-            {CHANNEL_LABELS[campaign.required_channel]}
+            {CHANNEL_LABELS[campaign.required_channel] || campaign.required_channel}
           </Badge>
           <Badge
             variant={isRecruiting ? "default" : "secondary"}
           >
-            {CAMPAIGN_STATUS_LABELS[campaign.status]}
+            {CAMPAIGN_STATUS_LABELS[campaign.status] || campaign.status}
           </Badge>
+          {campaign.category_name && (
+            <Badge variant="outline">{campaign.category_name}</Badge>
+          )}
+          {campaign.region && (
+            <Badge variant="outline">{campaign.region}</Badge>
+          )}
         </div>
         <h1 className="text-2xl lg:text-3xl font-bold mb-2">
           {campaign.title}
@@ -137,16 +143,115 @@ export default function CampaignDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">캠페인 소개</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="whitespace-pre-wrap text-sm leading-relaxed">
-                {campaign.description}
-              </p>
-            </CardContent>
-          </Card>
+          {/* 구매처 링크 */}
+          {campaign.purchase_link && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">구매처 링크</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <a
+                  href={campaign.purchase_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary underline break-all"
+                >
+                  {campaign.purchase_link}
+                </a>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* 제공내역 */}
+          {campaign.provided_items && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">제공내역</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                  {campaign.provided_items}
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* 검색키워드 */}
+          {campaign.search_keywords_text && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">검색키워드</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                  {campaign.search_keywords_text}
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* 체험단 미션 */}
+          {campaign.mission && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">체험단 미션</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                  {campaign.mission}
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* 필수입력답변 */}
+          {campaign.required_qa && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">필수입력답변</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                  {campaign.required_qa}
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* 캠페인 소개 (legacy description) */}
+          {campaign.description && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">캠페인 소개</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                  {campaign.description}
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* 상세 이미지 */}
+          {campaign.detail_images && campaign.detail_images.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">상세 이미지</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {campaign.detail_images.map((url, i) => (
+                    <img
+                      key={i}
+                      src={url}
+                      alt={`상세 이미지 ${i + 1}`}
+                      className="w-full rounded-lg"
+                    />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {campaign.guidelines && (
             <Card>
@@ -160,36 +265,6 @@ export default function CampaignDetailPage() {
               </CardContent>
             </Card>
           )}
-
-          {/* Content Requirements */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">콘텐츠 요구사항</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">필수 이미지 수</span>
-                <span>{campaign.required_images_count}장 이상</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">최소 글자 수</span>
-                <span>{campaign.min_text_length}자 이상</span>
-              </div>
-              {campaign.required_keywords &&
-                campaign.required_keywords.length > 0 && (
-                  <div>
-                    <span className="text-muted-foreground">필수 키워드</span>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {campaign.required_keywords.map((kw) => (
-                        <Badge key={kw} variant="outline" className="text-xs">
-                          {kw}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-            </CardContent>
-          </Card>
         </div>
 
         {/* Sidebar */}
@@ -197,59 +272,59 @@ export default function CampaignDetailPage() {
           <Card>
             <CardContent className="p-4 space-y-3 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">보상 유형</span>
-                <span className="font-medium">
-                  {COMPENSATION_LABELS[campaign.compensation_type]}
-                </span>
-              </div>
-              {campaign.cash_amount > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">현금 보상</span>
-                  <span className="font-medium text-primary">
-                    {formatCurrency(campaign.cash_amount)}
-                  </span>
-                </div>
-              )}
-              {campaign.product_name && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">제공 제품</span>
-                  <span>{campaign.product_name}</span>
-                </div>
-              )}
-              {campaign.store_name && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">매장</span>
-                  <span>{campaign.store_name}</span>
-                </div>
-              )}
-              <Separator />
-              <div className="flex justify-between">
                 <span className="text-muted-foreground">모집 인원</span>
                 <span>
                   {campaign.current_applicants}/{campaign.max_applicants}명
                 </span>
               </div>
+              {campaign.purchase_price != null && campaign.purchase_price > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">구매가격</span>
+                  <span className="font-medium">
+                    {new Intl.NumberFormat("ko-KR").format(campaign.purchase_price)}원
+                  </span>
+                </div>
+              )}
+              <Separator />
               <div className="flex justify-between">
-                <span className="text-muted-foreground">모집 기간</span>
+                <span className="text-muted-foreground">모집기간</span>
                 <span>
-                  {formatDate(campaign.recruitment_start)} ~{" "}
-                  {formatDate(campaign.recruitment_end)}
+                  {formatDate(applyStart)} ~ {formatDate(applyEnd)}
                 </span>
               </div>
-              {campaign.selection_date && (
+              {campaign.announce_date && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">발표일</span>
+                  <span>{formatDate(campaign.announce_date)}</span>
+                </div>
+              )}
+              {(campaign.register_start || campaign.register_end) && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">등록기간</span>
+                  <span>
+                    {campaign.register_start
+                      ? formatDate(campaign.register_start)
+                      : ""}{" "}
+                    ~{" "}
+                    {campaign.register_end
+                      ? formatDate(campaign.register_end)
+                      : ""}
+                  </span>
+                </div>
+              )}
+              {campaign.deadline_date && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">마감일</span>
+                  <span>{formatDate(campaign.deadline_date)}</span>
+                </div>
+              )}
+              {/* Legacy dates fallback */}
+              {!campaign.announce_date && campaign.selection_date && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">선정 발표</span>
                   <span>{formatDate(campaign.selection_date)}</span>
                 </div>
               )}
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">콘텐츠 마감</span>
-                <span>{formatDate(campaign.content_deadline)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">게시 마감</span>
-                <span>{formatDate(campaign.publish_deadline)}</span>
-              </div>
               <Separator />
               {canApply ? (
                 <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

@@ -81,6 +81,8 @@ export default function AdvertiserCampaignDetailPage() {
 
   const pendingApps = applications.filter((a) => a.status === "pending");
   const selectedApps = applications.filter((a) => a.status === "selected");
+  const applyEnd = campaign.apply_end || campaign.recruitment_end;
+  const applyStart = campaign.apply_start || campaign.recruitment_start;
 
   return (
     <div className="space-y-6">
@@ -88,13 +90,19 @@ export default function AdvertiserCampaignDetailPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <Badge>{CAMPAIGN_STATUS_LABELS[campaign.status]}</Badge>
+            <Badge>{CAMPAIGN_STATUS_LABELS[campaign.status] || campaign.status}</Badge>
             <Badge variant="outline">
-              {CAMPAIGN_TYPE_LABELS[campaign.campaign_type]}
+              {CAMPAIGN_TYPE_LABELS[campaign.campaign_type] || campaign.campaign_type}
             </Badge>
             <Badge variant="secondary">
-              {CHANNEL_LABELS[campaign.required_channel]}
+              {CHANNEL_LABELS[campaign.required_channel] || campaign.required_channel}
             </Badge>
+            {campaign.category_name && (
+              <Badge variant="outline">{campaign.category_name}</Badge>
+            )}
+            {campaign.region && (
+              <Badge variant="outline">{campaign.region}</Badge>
+            )}
           </div>
           <h1 className="text-2xl font-bold">{campaign.title}</h1>
         </div>
@@ -107,12 +115,12 @@ export default function AdvertiserCampaignDetailPage() {
           {campaign.status === "active" && (
             <Button
               variant="secondary"
-              onClick={() => updateCampaignStatus("recruitment_closed")}
+              onClick={() => updateCampaignStatus("closed")}
             >
               모집 마감
             </Button>
           )}
-          {campaign.status === "recruitment_closed" && (
+          {(campaign.status === "closed" || campaign.status === "recruitment_closed") && (
             <Button onClick={() => updateCampaignStatus("in_progress")}>
               진행 시작
             </Button>
@@ -226,25 +234,85 @@ export default function AdvertiserCampaignDetailPage() {
           <Card>
             <CardContent className="p-4 space-y-3 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">모집 기간</span>
+                <span className="text-muted-foreground">모집기간</span>
                 <span>
-                  {formatDate(campaign.recruitment_start)} ~{" "}
-                  {formatDate(campaign.recruitment_end)}
+                  {formatDate(applyStart)} ~{" "}
+                  {formatDate(applyEnd)}
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">콘텐츠 마감</span>
-                <span>{formatDate(campaign.content_deadline)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">게시 마감</span>
-                <span>{formatDate(campaign.publish_deadline)}</span>
-              </div>
+              {campaign.announce_date && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">발표일</span>
+                  <span>{formatDate(campaign.announce_date)}</span>
+                </div>
+              )}
+              {(campaign.register_start || campaign.register_end) && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">등록기간</span>
+                  <span>
+                    {campaign.register_start ? formatDate(campaign.register_start) : ""} ~{" "}
+                    {campaign.register_end ? formatDate(campaign.register_end) : ""}
+                  </span>
+                </div>
+              )}
+              {campaign.deadline_date && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">마감일</span>
+                  <span>{formatDate(campaign.deadline_date)}</span>
+                </div>
+              )}
+              {/* Legacy fallback */}
+              {!campaign.announce_date && campaign.selection_date && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">선정 발표</span>
+                  <span>{formatDate(campaign.selection_date)}</span>
+                </div>
+              )}
+              {!campaign.deadline_date && campaign.content_deadline && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">콘텐츠 마감</span>
+                  <span>{formatDate(campaign.content_deadline)}</span>
+                </div>
+              )}
               <Separator />
-              <div>
-                <p className="text-muted-foreground mb-1">설명</p>
-                <p className="whitespace-pre-wrap">{campaign.description}</p>
-              </div>
+              {campaign.purchase_link && (
+                <div>
+                  <p className="text-muted-foreground mb-1">구매처 링크</p>
+                  <a href={campaign.purchase_link} target="_blank" rel="noopener noreferrer" className="text-primary underline break-all">
+                    {campaign.purchase_link}
+                  </a>
+                </div>
+              )}
+              {campaign.provided_items && (
+                <div>
+                  <p className="text-muted-foreground mb-1">제공내역</p>
+                  <p className="whitespace-pre-wrap">{campaign.provided_items}</p>
+                </div>
+              )}
+              {campaign.search_keywords_text && (
+                <div>
+                  <p className="text-muted-foreground mb-1">검색키워드</p>
+                  <p className="whitespace-pre-wrap">{campaign.search_keywords_text}</p>
+                </div>
+              )}
+              {campaign.mission && (
+                <div>
+                  <p className="text-muted-foreground mb-1">체험단 미션</p>
+                  <p className="whitespace-pre-wrap">{campaign.mission}</p>
+                </div>
+              )}
+              {campaign.required_qa && (
+                <div>
+                  <p className="text-muted-foreground mb-1">필수입력답변</p>
+                  <p className="whitespace-pre-wrap">{campaign.required_qa}</p>
+                </div>
+              )}
+              {campaign.description && (
+                <div>
+                  <p className="text-muted-foreground mb-1">설명</p>
+                  <p className="whitespace-pre-wrap">{campaign.description}</p>
+                </div>
+              )}
               {campaign.guidelines && (
                 <div>
                   <p className="text-muted-foreground mb-1">가이드라인</p>
