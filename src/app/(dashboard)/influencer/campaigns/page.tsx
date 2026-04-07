@@ -68,7 +68,9 @@ export default function InfluencerCampaignsPage() {
         </form>
         <Select value={type} onValueChange={(v) => { if (v) { setType(v); setPage(1); } }}>
           <SelectTrigger className="w-40">
-            <SelectValue />
+            <SelectValue>
+              {type === "all" ? "전체 유형" : CAMPAIGN_TYPE_LABELS[type] || type}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">전체 유형</SelectItem>
@@ -79,7 +81,9 @@ export default function InfluencerCampaignsPage() {
         </Select>
         <Select value={channel} onValueChange={(v) => { if (v) { setChannel(v); setPage(1); } }}>
           <SelectTrigger className="w-44">
-            <SelectValue />
+            <SelectValue>
+              {channel === "all" ? "전체 채널" : CHANNEL_LABELS[channel] || channel}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">전체 채널</SelectItem>

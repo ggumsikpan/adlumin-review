@@ -79,7 +79,9 @@ export default function CampaignsPage() {
         <div className="flex gap-2">
           <Select value={type} onValueChange={(v) => { if (v) { setType(v); setPage(1); } }}>
             <SelectTrigger className="w-40">
-              <SelectValue placeholder="캠페인 유형" />
+              <SelectValue placeholder="캠페인 유형">
+                {type === "all" ? "전체 유형" : CAMPAIGN_TYPE_LABELS[type] || type}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">전체 유형</SelectItem>
@@ -92,7 +94,9 @@ export default function CampaignsPage() {
           </Select>
           <Select value={channel} onValueChange={(v) => { if (v) { setChannel(v); setPage(1); } }}>
             <SelectTrigger className="w-44">
-              <SelectValue placeholder="채널" />
+              <SelectValue placeholder="채널">
+                {channel === "all" ? "전체 채널" : CHANNEL_LABELS[channel] || channel}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">전체 채널</SelectItem>
