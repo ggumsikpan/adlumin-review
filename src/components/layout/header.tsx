@@ -34,11 +34,6 @@ export function Header() {
 
   return (
     <>
-      {isDemo && (
-        <div className="bg-amber-400 text-amber-900 text-center text-sm py-1.5 font-medium">
-          샘플 모드 &mdash; 실제 데이터가 아닙니다
-        </div>
-      )}
     <header className="border-b bg-white sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
