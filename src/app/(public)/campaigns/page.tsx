@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/providers/auth-provider";
+import { DEMO_CAMPAIGNS } from "@/lib/demo-data";
 import {
   Select,
   SelectContent,
@@ -20,6 +21,7 @@ import {
 } from "@/lib/utils/constants";
 
 export default function CampaignsPage() {
+  const { isDemo } = useAuth();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -29,6 +31,17 @@ export default function CampaignsPage() {
   const [page, setPage] = useState(1);
 
   const fetchCampaigns = async () => {
+    if (isDemo) {
+      let filtered = DEMO_CAMPAIGNS.filter((c) => c.status === "active" || c.status === "in_progress");
+      if (type !== "all") filtered = filtered.filter((c) => c.campaign_type === type);
+      if (channel !== "all") filtered = filtered.filter((c) => c.required_channel === channel);
+      if (search) filtered = filtered.filter((c) => c.title.includes(search) || c.description.includes(search));
+      setCampaigns(filtered);
+      setTotal(filtered.length);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     const params = new URLSearchParams();
     params.set("page", page.toString());
@@ -46,7 +59,7 @@ export default function CampaignsPage() {
 
   useEffect(() => {
     fetchCampaigns();
-  }, [page, type, channel]);
+  }, [page, type, channel, isDemo]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

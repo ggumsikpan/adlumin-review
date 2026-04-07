@@ -12,8 +12,8 @@ export function DemoEntryButtons() {
     setLoading(role);
     const ok = await toggleDemoMode(role);
     if (ok) {
-      router.push(role === "advertiser" ? "/advertiser" : "/influencer");
-      router.refresh();
+      window.location.href = role === "advertiser" ? "/advertiser" : "/influencer";
+      return;
     }
     setLoading(null);
   };

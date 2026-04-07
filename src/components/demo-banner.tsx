@@ -1,13 +1,11 @@
 "use client";
 
 import { useAuth } from "@/providers/auth-provider";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { toggleDemoMode } from "@/lib/demo-data";
+import { toggleDemoMode, clearDemoMode } from "@/lib/demo-data";
 
 export function DemoBanner() {
-  const { isDemo, signOut } = useAuth();
-  const router = useRouter();
+  const { isDemo } = useAuth();
   const [switching, setSwitching] = useState(false);
 
   if (!isDemo) return null;
@@ -21,20 +19,19 @@ export function DemoBanner() {
     setSwitching(true);
     const ok = await toggleDemoMode(otherRole);
     if (ok) {
-      router.push(otherRole === "advertiser" ? "/advertiser" : "/influencer");
-      router.refresh();
+      // Full page reload to reset auth state
+      window.location.href = otherRole === "advertiser" ? "/advertiser" : "/influencer";
     }
     setSwitching(false);
   };
 
-  const handleExit = async () => {
-    await signOut();
-    router.push("/");
-    router.refresh();
+  const handleExit = () => {
+    clearDemoMode();
+    window.location.href = "/";
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-50">
+    <div className="fixed bottom-4 right-4 z-50 print:hidden">
       <div className="bg-amber-50 border border-amber-300 rounded-xl shadow-lg px-4 py-3 flex flex-col gap-2 min-w-[200px]">
         <div className="flex items-center gap-2">
           <span className="inline-block w-2 h-2 rounded-full bg-amber-500 animate-pulse" />

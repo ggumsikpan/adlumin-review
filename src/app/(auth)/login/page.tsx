@@ -37,8 +37,8 @@ function LoginForm() {
         body: JSON.stringify({ role }),
       });
       if (res.ok) {
-        router.push(role === "advertiser" ? "/advertiser" : "/influencer");
-        router.refresh();
+        window.location.href = role === "advertiser" ? "/advertiser" : "/influencer";
+        return;
       } else {
         toast.error("샘플 로그인에 실패했습니다.");
       }
