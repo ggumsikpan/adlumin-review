@@ -2,8 +2,6 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
-import { DemoEntryButtons } from "@/components/demo-entry-buttons";
-
 export default function HomePage() {
   return (
     <>
@@ -30,7 +28,6 @@ export default function HomePage() {
                 무료 회원가입
               </Button>
             </div>
-            <DemoEntryButtons />
           </div>
         </section>
 
