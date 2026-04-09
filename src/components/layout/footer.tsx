@@ -80,7 +80,7 @@ export function Footer() {
               onClick={() => setShowDemo(!showDemo)}
               className="hover:text-foreground transition-colors cursor-pointer"
             >
-              플랫폼 제작 &middot; 꿈식판 꿈식맨
+              플랫폼 제작 &middot; <a href="https://ggumsikpan.github.io/ggumsikman" target="_blank" style={{color:'inherit',textDecoration:'none'}}>꿈식판 꿈식맨</a>
             </button>
             {showDemo && (
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-white border border-gray-200 rounded-xl shadow-lg p-4 min-w-[240px] z-50">
